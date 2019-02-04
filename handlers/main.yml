@@ -1,0 +1,12 @@
+---
+- name: 'restarted service : mattermost'
+  service:
+    name:  '{{ mattermost.service }}'
+    state: restarted
+  when:
+  - ansible_architecture == 'x86_64'
+  - ansible_system == 'Linux'
+  tags:
+  - slack
+  - server
+  - mattermost

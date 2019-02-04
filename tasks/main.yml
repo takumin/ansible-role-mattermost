@@ -1,0 +1,151 @@
+---
+- block:
+  - include_vars: '{{ item }}'
+    with_first_found:
+    - '{{ ansible_distribution.lower() }}.yml'
+    - '{{ ansible_os_family.lower() }}.yml'
+    - 'default.yml'
+
+  - name: 'admin group'
+    group:
+      name:   '{{ mattermost.user_group }}'
+      system: 'yes'
+
+  - name: 'admin user'
+    user:
+      name:       '{{ mattermost.user_owner }}'
+      group:      '{{ mattermost.user_group }}'
+      comment:    'Mattermost'
+      createhome: 'no'
+      home:       '/nonexistent'
+      shell:      '/usr/sbin/nologin'
+      system:     'yes'
+
+  - name: 'check installed'
+    stat:
+      path: '{{ mattermost.base_dir }}/bin/platform'
+    register: result
+
+  - block:
+    - name: 'download archive'
+      get_url:
+        dest:     '/tmp/{{ mattermost.url | basename }}'
+        url:      '{{ mattermost.url }}'
+        checksum: '{{ mattermost.checksum }}'
+      environment: '{{ proxy_environment | default({}) }}'
+
+    - name: 'extract archive'
+      unarchive:
+        src:        '/tmp/{{ mattermost.url | basename }}'
+        dest:       '/tmp'
+        creates:    '{{ mattermost.base_dir }}/bin/platform'
+        remote_src: True
+
+    - name: 'copy files'
+      command: |
+        mv /tmp/mattermost {{ mattermost.base_dir }}
+      args:
+        creates: '{{ mattermost.base_dir }}/bin/platform'
+
+    - name: 'permission files'
+      file:
+        path:    '{{ mattermost.base_dir }}'
+        owner:   '{{ mattermost.user_owner }}'
+        group:   '{{ mattermost.user_group }}'
+        recurse: True
+
+    # block
+    when:
+    - not result.stat.exists
+
+  - block:
+    - name: 'systemd service'
+      template:
+        src:   'mattermost.service.j2'
+        dest:  '/etc/systemd/system/mattermost.service'
+        owner: '{{ mattermost.root_owner }}'
+        group: '{{ mattermost.root_group }}'
+        mode:  '0444'
+      notify:
+      - 'restarted service : mattermost'
+      register: service_result
+
+    - name: 'service proxy'
+      template:
+        src:   'mattermost.proxy.j2'
+        dest:  '/etc/default/mattermost'
+        owner: '{{ mattermost.root_owner }}'
+        group: '{{ mattermost.root_group }}'
+        mode:  '0444'
+      notify:
+      - 'restarted service : mattermost'
+      when:
+      - proxy_environment is defined
+      - (proxy_environment.no_proxy is defined and proxy_environment.no_proxy != '') or
+        (proxy_environment.ftp_proxy is defined and proxy_environment.ftp_proxy != '') or
+        (proxy_environment.http_proxy is defined and proxy_environment.http_proxy != '') or
+        (proxy_environment.https_proxy is defined and proxy_environment.https_proxy != '')
+      register: proxy_result
+
+    - name: 'systemd reload'
+      systemd:
+        name:          '{{ mattermost.service }}'
+        state:         'restarted'
+        daemon_reload: 'yes'
+      when:
+      - service_result.changed or proxy_result.changed
+
+    # block
+    when:
+    - ansible_service_mgr == 'systemd'
+
+  - name: 'service enabled'
+    service:
+      name:    '{{ mattermost.service }}'
+      enabled: yes
+
+  - name: 'service started'
+    service:
+      name:  '{{ mattermost.service }}'
+      state: started
+
+  - name: load config
+    shell: 'cat {{ mattermost.base_dir }}/config/config.json'
+    register: config_file
+    changed_when: false
+
+  - name: load json
+    set_fact:
+      org_config: '{{ (config_file.stdout | from_json) }}'
+      mod_config: '{{ (config_file.stdout | from_json) | combine(mattermost.config, recursive=True) }}'
+
+  - block:
+    - name: 'service stopped'
+      service:
+        name:  '{{ mattermost.service }}'
+        state: stopped
+
+    - name: 'service configure'
+      copy:
+        content: '{{ mod_config | to_nice_json(indent=4) }}'
+        dest:    '{{ mattermost.base_dir }}/config/config.json'
+        owner:   '{{ mattermost.user_owner }}'
+        group:   '{{ mattermost.user_group }}'
+        mode:    '0600'
+
+    - name: 'service started'
+      service:
+        name:  '{{ mattermost.service }}'
+        state: started
+
+    # block
+    when: org_config != mod_config
+
+  # block
+  when:
+  - ansible_architecture == 'x86_64'
+  - ansible_system == 'Linux'
+  tags:
+  - slack
+  - server
+  - mattermost

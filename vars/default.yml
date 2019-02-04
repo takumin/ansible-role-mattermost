@@ -1,0 +1,10 @@
+---
+mattermost_vars:
+  url:         'https://releases.mattermost.com/5.6.2/mattermost-team-5.6.2-linux-amd64.tar.gz'
+  checksum:    'sha256:a6db78abc6777b5f6daa20e556834551735c371701e4e4a05df69dc3b1b2f0a9'
+  service:     'mattermost.service'
+  user_owner:  'mattermost'
+  user_group:  'mattermost'
+  root_owner:  'root'
+  root_group:  'root'
+  base_dir:    '/opt/mattermost'

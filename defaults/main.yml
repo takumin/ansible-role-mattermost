@@ -1,0 +1,11 @@
+---
+mattermost:
+  url:         '{{ mattermost_vars.url }}'
+  checksum:    '{{ mattermost_vars.checksum }}'
+  service:     '{{ mattermost_vars.service }}'
+  user_owner:  '{{ mattermost_vars.user_owner }}'
+  user_group:  '{{ mattermost_vars.user_group }}'
+  root_owner:  '{{ mattermost_vars.root_owner }}'
+  root_group:  '{{ mattermost_vars.root_group }}'
+  base_dir:    '{{ mattermost_vars.base_dir }}'
+  config:      {}

@@ -1,0 +1,20 @@
+[Unit]
+Description=Mattermost
+Wants=network-online.target
+After=network-online.target
+After=mysql.service
+Requires=mysql.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+User={{ mattermost.user_owner }}
+Group={{ mattermost.user_group }}
+WorkingDirectory={{ mattermost.base_dir }}
+EnvironmentFile=-/etc/default/mattermost
+ExecStart={{ mattermost.base_dir }}/bin/mattermost
+LimitNOFILE=49152
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+#
+# {{ ansible_managed }}
+#
+{% if proxy_environment is defined %}
+{%   if proxy_environment.no_proxy is defined and proxy_environment.no_proxy != '' %}
+NO_PROXY={{ proxy_environment.no_proxy }}
+{%   endif %}
+{%   if proxy_environment.ftp_proxy is defined and proxy_environment.ftp_proxy != '' %}
+FTP_PROXY={{ proxy_environment.ftp_proxy }}
+{%   endif %}
+{%   if proxy_environment.http_proxy is defined and proxy_environment.http_proxy != '' %}
+HTTP_PROXY={{ proxy_environment.http_proxy }}
+{%   endif %}
+{%   if proxy_environment.https_proxy is defined and proxy_environment.https_proxy != '' %}
+HTTPS_PROXY={{ proxy_environment.https_proxy }}
+{%   endif %}
+{% endif %}
