@@ -1,7 +1,7 @@
 ---
 mattermost_vars:
-  url:         'https://releases.mattermost.com/5.6.2/mattermost-team-5.6.2-linux-amd64.tar.gz'
-  checksum:    'sha256:a6db78abc6777b5f6daa20e556834551735c371701e4e4a05df69dc3b1b2f0a9'
+  url:         'https://releases.mattermost.com/5.7.1/mattermost-team-5.7.1-linux-amd64.tar.gz'
+  checksum:    'sha256:be7ea8c95aeb54921b492cfea5477d9e37b8330550254214aa63546d1c1dda76'
   service:     'mattermost.service'
   user_owner:  'mattermost'
   user_group:  'mattermost'
